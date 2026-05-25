@@ -1,9 +1,7 @@
-FROM ghcr.io/astral-sh/uv:python3.13-alpine AS builder
+FROM ghcr.io/astral-sh/uv:python3.13-trixie-slim AS builder
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
 ENV UV_PYTHON_DOWNLOADS=0
-
-RUN apk add git
 
 RUN python3 -V
 
@@ -17,7 +15,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
 
-FROM python:3.13-alpine
+FROM python:3.13-slim
 
 COPY --from=builder --chown=nonroot:nonroot /app /app
 
