@@ -85,6 +85,10 @@ class HoldingsClient:
         )
         self.account = self.api.stock_account
 
+    async def usage(self) -> sj.UsageOut:
+        usage = await self.api.usage()
+        return usage
+
     async def list_positions(self) -> dict[str, sj.StockPosition | sj.FuturePosition]:
         positions = await self.api.list_positions(self.account, unit="Share")
         positions_dict = self.positions_by_code(positions)
@@ -96,6 +100,8 @@ async def main():
     await client.ensure_logged_in()
     positions = await client.list_positions()
     client.print_positions(positions)
+    usage = await client.usage()
+    print(f"API使用額度: {usage.bytes/1024:.5f}/ {usage.limit_bytes/1048576:.2f} MB, 已使用{usage.bytes/usage.limit_bytes*100:.2f}%")
 
 
 if __name__ == "__main__":
