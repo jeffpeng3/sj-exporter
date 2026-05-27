@@ -86,6 +86,7 @@ class HoldingsClient:
         self.account = self.api.stock_account
 
     async def refresh_token(self):
+        print("正在刷新Token...")
         await self.api.logout()
         self.account = None
         await self.login()
