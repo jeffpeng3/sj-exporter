@@ -48,7 +48,7 @@ def remove_position_metrics(code: str) -> None:
     POSITION_PRICE.remove(code)
     POSITION_PNL.remove(code)
 
-async def update_trading_day() -> bool:
+async def update_trading_day(client: HoldingsClient) -> bool:
     global CURRENT_DATE
     global IS_TRADING_DAY
     now = datetime.now(tz=tz)
@@ -57,6 +57,9 @@ async def update_trading_day() -> bool:
         CURRENT_DATE = today
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
             IS_TRADING_DAY = is_scheduled_trading_day() or await is_typhoon_closed_today(session)
+        if IS_TRADING_DAY:
+            client.refresh_token()
+
     return IS_TRADING_DAY
 
 async def update_trading_time() -> bool:
@@ -81,7 +84,7 @@ async def sleep_until_next_trading_time() -> None:
 
 async def collect_position_metrics(client: HoldingsClient, init: bool = False) -> None:
     if not init:
-        if not await update_trading_day():
+        if not await update_trading_day(client):
             print("今天不是交易日，等待直到下一個交易日...")
             await sleep_until_next_trading_time()
             return
