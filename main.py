@@ -58,7 +58,7 @@ async def update_trading_day(client: HoldingsClient) -> bool:
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
             IS_TRADING_DAY = is_scheduled_trading_day() or await is_typhoon_closed_today(session)
         if IS_TRADING_DAY:
-            client.refresh_token()
+            await client.refresh_token()
 
     return IS_TRADING_DAY
 
