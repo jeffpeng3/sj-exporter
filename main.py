@@ -24,6 +24,11 @@ POSITION_PNL = Gauge(
     "Stock position profit and loss",
     ["code"],
 )
+POSITION_ROI = Gauge(
+    "shioaji_position_roi",
+    "Stock position return on investment percentage",
+    ["code"],
+)
 
 app = web.Application()
 app.router.add_get("/metrics", make_aiohttp_handler())
@@ -42,11 +47,15 @@ def set_position_metrics(position: StockPosition | FuturePosition) -> None:
     code = position.code
     POSITION_PRICE.labels(code).set(position.price)
     POSITION_PNL.labels(code).set(position.pnl)
+    cost = position.price * position.quantity
+    roi = position.pnl / cost * 100 if cost else 0.0
+    POSITION_ROI.labels(code).set(roi)
 
 
 def remove_position_metrics(code: str) -> None:
     POSITION_PRICE.remove(code)
     POSITION_PNL.remove(code)
+    POSITION_ROI.remove(code)
 
 async def update_trading_day(client: HoldingsClient) -> bool:
     global CURRENT_DATE
