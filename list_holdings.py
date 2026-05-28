@@ -124,8 +124,15 @@ class HoldingsClient:
 async def main():
     client = HoldingsClient()
     await client.ensure_logged_in()
-    positions = await client.list_positions()
-    client.print_positions(positions)
+    while True:
+        try:
+            positions = await client.list_positions()
+            client.print_positions(positions)
+            await asyncio.sleep(10)
+        except KeyboardInterrupt:
+            break
+        except asyncio.CancelledError:
+            break
     usage = await client.usage()
     print(f"API使用額度: {usage.bytes/1048576:.2f}/ {usage.limit_bytes/1048576:.2f} MB, 已使用{usage.bytes/usage.limit_bytes*100:.2f}%")
 
