@@ -10,7 +10,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project --no-dev
-COPY . /app
+COPY uv.lock pyproject.toml /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
@@ -18,6 +18,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 FROM python:3.13-slim
 
 COPY --from=builder --chown=nonroot:nonroot /app /app
+
+COPY --chown=nonroot:nonroot . /app
 
 ENV PATH="/app/.venv/bin:$PATH"
 
