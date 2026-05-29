@@ -2,8 +2,8 @@ import aiohttp
 import asyncio
 import exchange_calendars as xcals
 from datetime import datetime
-import pytz
-tz = pytz.timezone('Asia/Taipei')
+from zoneinfo import ZoneInfo
+tz = ZoneInfo("Asia/Taipei")
 
 def is_scheduled_trading_day():
     twse = xcals.get_calendar("XTAI")

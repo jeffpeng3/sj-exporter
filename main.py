@@ -7,12 +7,11 @@ from prometheus_client import Gauge
 from prometheus_client.aiohttp import make_aiohttp_handler
 from shioaji import FuturePosition, StockPosition
 from datetime import datetime, date, timedelta, time
-import pytz
-
+from zoneinfo import ZoneInfo
 from list_holdings import HoldingsClient
 from work import is_scheduled_trading_day, is_typhoon_closed_today
 load_dotenv()
-tz = pytz.timezone("Asia/Taipei")
+tz = ZoneInfo("Asia/Taipei")
 
 POSITION_PRICE = Gauge(
     "shioaji_position_price",
@@ -28,6 +27,10 @@ POSITION_ROI = Gauge(
     "shioaji_position_roi",
     "Stock position return on investment percentage",
     ["code"],
+)
+OVERALL_ROI = Gauge(
+    "shioaji_overall_roi",
+    "Overall portfolio return on investment percentage",
 )
 
 app = web.Application()
@@ -65,7 +68,7 @@ async def update_trading_day(client: HoldingsClient) -> bool:
     if today != CURRENT_DATE:
         CURRENT_DATE = today
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
-            IS_TRADING_DAY = is_scheduled_trading_day() or await is_typhoon_closed_today(session)
+            IS_TRADING_DAY = is_scheduled_trading_day() and not await is_typhoon_closed_today(session)
         if IS_TRADING_DAY:
             await client.refresh_token()
 
@@ -82,7 +85,7 @@ async def sleep_until_next_trading_time() -> None:
     now = datetime.now(tz=tz)
     if now.time() < START_TRADE_TIME:
         target_time = datetime.combine(now.date(), START_TRADE_TIME, tzinfo=tz)
-    elif now.time() > END_TRADE_TIME:
+    elif not IS_TRADING_TIME or now.time() > END_TRADE_TIME:
         target_time = datetime.combine(now.date() + timedelta(days=1), START_TRADE_TIME, tzinfo=tz)
     else:
         return
@@ -108,12 +111,20 @@ async def collect_position_metrics(client: HoldingsClient, init: bool = False) -
     positions = await client.list_positions()
     current_labels: set[str] = set()
 
+    total_cost = 0.0
+    total_pnl = 0.0
+
     for position in positions.values():
         code = str(getattr(position, "code", ""))
         if not code:
             continue
         current_labels.add(code)
         set_position_metrics(position)
+        total_cost += position.price * position.quantity
+        total_pnl += position.pnl
+
+    overall_roi = (total_pnl / total_cost * 100) if total_cost else 0.0
+    OVERALL_ROI.set(overall_roi)
 
     stale_labels = LAST_POSITION_LABELS - current_labels
     for code in stale_labels:
