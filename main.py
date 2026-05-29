@@ -85,7 +85,7 @@ async def sleep_until_next_trading_time() -> None:
     now = datetime.now(tz=tz)
     if now.time() < START_TRADE_TIME:
         target_time = datetime.combine(now.date(), START_TRADE_TIME, tzinfo=tz)
-    elif not IS_TRADING_TIME or now.time() > END_TRADE_TIME:
+    elif not IS_TRADING_DAY or now.time() > END_TRADE_TIME:
         target_time = datetime.combine(now.date() + timedelta(days=1), START_TRADE_TIME, tzinfo=tz)
     else:
         return
