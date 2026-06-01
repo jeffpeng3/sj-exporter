@@ -107,7 +107,10 @@ class HoldingsClient:
 
     async def refresh_token(self):
         print("正在刷新Token...")
-        await self.api.logout()
+        try:
+            await self.api.logout()
+        except Exception as e:
+            print(f"登出失敗: {e}")
         self.account = None
         await self.login()
 
