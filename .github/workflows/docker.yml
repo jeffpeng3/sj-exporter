@@ -37,7 +37,7 @@ jobs:
     - name: build and push server
       uses: docker/build-push-action@v7
       with:
-        push: true
+        push: ${{ github.actor != 'dependabot[bot]' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha,scope=server
