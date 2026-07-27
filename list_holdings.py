@@ -1,9 +1,12 @@
 import asyncio
+import os
 from os import getenv
 from dotenv import load_dotenv
 import shioaji as sj
 
 load_dotenv()
+
+MAX_RECONNECT_FAILURES = 5
 
 
 class HoldingsClient:
@@ -18,7 +21,31 @@ class HoldingsClient:
             )
         self.api = sj.ShioajiAsync()
         self.account: sj.Account | None = None
+        self._reconnect_failures = 0
+        self.api.on_session_down(self._on_session_down)
         asyncio.create_task(self.login())
+
+    async def _on_session_down(self):
+        print("會話已斷開，正在重新登入...")
+        self.account = None
+        for _ in range(MAX_RECONNECT_FAILURES):
+            try:
+                await self.api.login(
+                    api_key=self.api_key,
+                    secret_key=self.secret_key,
+                    fetch_contract=False,
+                )
+                self.account = self.api.stock_account
+                self._reconnect_failures = 0
+                print("重新登入成功")
+                return
+            except Exception as e:
+                self._reconnect_failures += 1
+                print(f"重新登入失敗 ({self._reconnect_failures}/{MAX_RECONNECT_FAILURES}): {e}")
+                if self._reconnect_failures >= MAX_RECONNECT_FAILURES:
+                    print("連續重連失敗次數過多，程式退出")
+                    os._exit(1)
+                await asyncio.sleep(5)
 
     async def ensure_logged_in(self):
         while not self.account:
