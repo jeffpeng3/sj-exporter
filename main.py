@@ -136,6 +136,7 @@ async def collect_position_metrics(client: HoldingsClient, init: bool = False) -
 
 async def update_metrics(app):
     client = HoldingsClient()
+    await client.login()
     await collect_position_metrics(client, init=True)
     while True:
         for i in range(10):

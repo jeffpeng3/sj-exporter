@@ -23,7 +23,6 @@ class HoldingsClient:
         self.account: sj.Account | None = None
         self._reconnect_failures = 0
         self.api.on_session_down(self._on_session_down)
-        asyncio.create_task(self.login())
 
     async def _on_session_down(self):
         print("會話已斷開，正在重新登入...")
