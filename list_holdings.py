@@ -22,7 +22,6 @@ class HoldingsClient:
         self.api = sj.ShioajiAsync()
         self.account: sj.Account | None = None
         self._reconnect_failures = 0
-        self.api.on_session_down(self._on_session_down)
 
     async def _on_session_down(self):
         print("會話已斷開，正在重新登入...")
@@ -129,6 +128,7 @@ class HoldingsClient:
             secret_key=self.secret_key,
             fetch_contract=False,
         )
+        self.api.on_session_down(self._on_session_down)
         self.account = self.api.stock_account
 
     async def refresh_token(self):
